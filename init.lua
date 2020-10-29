@@ -14,6 +14,8 @@ local timer = 0
 local function dowse(player, rod, rod_dowsing)
 	local dowsing = rod_dowsing or rod:get_definition().dowsing
 	local player_pos = player:get_pos()
+	local player_name = player:get_player_name()
+
 	player_pos.y = player_pos.y + 1
 	player_pos = vector.round(player_pos)
 
@@ -25,14 +27,20 @@ local function dowse(player, rod, rod_dowsing)
 		if node_pos then
 			local node = minetest.get_node(node_pos)
 			local dist = vector.distance(player_pos, node_pos)
-			local msg = player:get_player_name() .. " senses " .. node.name .. " at distance " .. tostring(dist)
-			minetest.chat_send_player(player:get_player_name(), msg)
+
+			local msg = string.format("%s senses %s at distance %.1f", player_name, node.name, dist)
 			minetest.log("action", msg)
+
+			local genloc = dist < range/2 and S("nearby") or S("in the area")
+			msg = S("You sense @1 @2", spec.target_name, genloc)
+			minetest.chat_send_player(player_name, msg)
 			found = true
 		end
 	end
-	if not found then
-		minetest.chat_send_player(player:get_player_name(), player:get_player_name() .. " senses nothing")
+	-- if the action was requested and nothing was found, let the user known
+	if not rod_dowsing and not found then
+		minetest.log("action", player_name .. " senses nothing")
+		minetest.chat_send_player(player_name, S("You sense nothing in the area"))
 	end
 	return nil
 end
@@ -58,12 +66,12 @@ end)
 
 minetest.register_craftitem("dowsing:rod", {
 	description = S("Dowsing rod"),
-	-- TODO this currently held upside down 8-/
 	inventory_image = "dowsing_rod.png",
+	wield_image = "dowsing_rod.png^[transformFX",
 	groups = { dowsing_rod = 1, flammable = 2},
 	stack_max = 1,
 	dowsing = {
-		{ target = "group:water", range = 10 }
+		{ target_name = S("water"), target = "group:water", range = 10 }
 	},
 	on_use = function(item, user, pointed_thing) return dowse(user, item) end,
 })
