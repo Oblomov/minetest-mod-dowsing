@@ -5,17 +5,36 @@
 -- support for MT game translation.
 local S = default.get_translator
 
+-- cache method
+local sprintf = string.format
+
 -- Rod checks only every interval seconds
 local interval = 1
 local timer = 0
 local default_range = 16
 
+-- Map for player name => HUD index
+local dowsing_hud = {}
+
+local dowsing_nothing = S("You sense nothing in the area")
 
 -- Actual dowsing function for given player wielding given rod
 local function dowse(player, rod, rod_dowsing)
 	local dowsing = rod_dowsing or rod:get_definition().dowsing
 	local player_pos = player:get_pos()
 	local player_name = player:get_player_name()
+
+	local hud_text = ""
+
+	local hud = dowsing_hud[player_name] or player:hud_add({
+		hud_elem_type = "text",
+		position = { x = 0.5, y = 0.5 },
+		offset = { x = 0, y = 0 },
+		alignment = { x = 0, y = 0 },
+		scale = { x = 100, y = 100 },
+		text = hud_text,
+		number = 0xffffff,
+	})
 
 	player_pos.y = player_pos.y + 1
 	player_pos = vector.round(player_pos)
@@ -29,20 +48,24 @@ local function dowse(player, rod, rod_dowsing)
 			local node = minetest.get_node(node_pos)
 			local dist = vector.distance(player_pos, node_pos)
 
-			local msg = string.format("%s senses %s at distance %.1f", player_name, node.name, dist)
-			minetest.log("action", msg)
+			-- minetest.log("action", string.format("%s senses %s at distance %.1f", player_name, node.name, dist)
 
 			local genloc = dist < range/2 and S("nearby") or S("in the area")
 			msg = S("You sense @1 @2", spec.target_name, genloc)
-			minetest.chat_send_player(player_name, msg)
+			hud_text = sprintf("%s\n%s", hud_text, msg)
 			found = true
 		end
 	end
 	-- if the action was requested and nothing was found, let the user known
-	if not rod_dowsing and not found then
-		minetest.log("action", player_name .. " senses nothing")
-		minetest.chat_send_player(player_name, S("You sense nothing in the area"))
+	if not found then
+		-- log only if the action was requested
+		if not rod_dowsing then
+			minetest.log("action", player_name .. " senses nothing")
+		end
+		hud_text = sprintf("%s\n%s", hud_text, dowsing_nothing)
 	end
+	player:hud_change(hud, "text", hud_text)
+	dowsing_hud[player_name] = hud
 	return nil
 end
 
@@ -59,6 +82,14 @@ minetest.register_globalstep(function(dtime)
 		local rod_dowsing = rod:get_definition().dowsing
 		if rod_dowsing ~= nil then
 			dowse(player, rod, rod_dowsing)
+		else
+			-- remove the dowsing hud
+			local player_name = player:get_player_name()
+			local hud = dowsing_hud[player_name]
+			if hud then
+				player:hud_remove(hud)
+				dowsing_hud[player_name] = nil
+			end
 		end
 	end
 end)
