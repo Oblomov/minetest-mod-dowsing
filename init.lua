@@ -11,7 +11,7 @@ local sprintf = string.format
 -- Rod checks only every interval seconds
 local interval = 1
 local timer = 0
-local default_range = 16
+local default_range = 8
 
 -- Map for player name => HUD index
 local dowsing_hud = {}
