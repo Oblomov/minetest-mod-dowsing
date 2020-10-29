@@ -8,6 +8,7 @@ local S = default.get_translator
 -- Rod checks only every interval seconds
 local interval = 1
 local timer = 0
+local default_range = 16
 
 
 -- Actual dowsing function for given player wielding given rod
@@ -21,7 +22,7 @@ local function dowse(player, rod, rod_dowsing)
 
 	local found = false
 	for _, spec in pairs(dowsing) do
-		local range = spec.range
+		local range = spec.range or default_range
 		local nodenames = spec.target
 		local node_pos = minetest.find_node_near(player_pos, range, nodenames)
 		if node_pos then
@@ -71,7 +72,49 @@ minetest.register_craftitem("dowsing:rod", {
 	groups = { dowsing_rod = 1, flammable = 2},
 	stack_max = 1,
 	dowsing = {
-		{ target_name = S("water"), target = "group:water", range = 10 }
+		{ target_name = S("water"), target = "group:water" },
+	},
+	on_use = function(item, user, pointed_thing) return dowse(user, item) end,
+})
+
+minetest.register_craftitem("dowsing:abstract_rod", {
+	description = S("Abstract dowsing rod"),
+	inventory_image = "abstract_dowsing_rod.png",
+	wield_image = "abstract_dowsing_rod.png^[transformFX",
+	groups = { dowsing_rod = 1, flammable = 2},
+	stack_max = 1,
+	dowsing = {
+		{ target_name = S("something wet"), target = "group:water", },
+		{ target_name = S("something hot"), target = "group:igniter", },
+		{
+			target_name = S("something useful"),
+			target = {
+				"default:stone_with_coal", "default:stone_with_copper", "default:stone_with_tin", "default:stone_with_iron",
+				"default:coalblock", "default:copperblock", "default:tinblock", "default:steelblock",
+				"default:bronzeblock",
+			},
+		},
+		{
+			target_name = S("something precious"),
+			target = {
+				"default:stone_with_mese", "default:stone_with_gold", "default:stone_with_diamond",
+				"default:mese", "default:goldblock", "default:diamondblock",
+			},
+		},
+	},
+	on_use = function(item, user, pointed_thing) return dowse(user, item) end,
+})
+
+minetest.register_craftitem("dowsing:steel_rod", {
+	description = S("Steel dowsing rod"),
+	inventory_image = "steel_dowsing_rod.png",
+	wield_image = "steel_dowsing_rod.png^[transformFX",
+	groups = { dowsing_rod = 1, flammable = 2},
+	stack_max = 1,
+	dowsing = {
+		{ target_name = S("water"), target = "group:water", },
+		{ target_name = S("coal"), target = { "default:stone_with_coal", "default:coalblock", }, },
+		{ target_name = S("iron"), target = { "default:stone_with_iron", "default:steelblock", }, },
 	},
 	on_use = function(item, user, pointed_thing) return dowse(user, item) end,
 })
@@ -86,6 +129,23 @@ minetest.register_craft({
 		{ "group:stick", "", "group:stick" }
 	},
 })
+
+minetest.register_craft({
+	output = "dowsing:abstract_rod",
+	recipe = {
+		{ "default:gravel"},
+		{ "dowsing:rod"},
+	},
+})
+
+minetest.register_craft({
+	output = "dowsing:steel_rod",
+	recipe = {
+		{ "default:steel_ingot"},
+		{ "dowsing:rod"},
+	},
+})
+
 
 -- Fuel recipes
 
