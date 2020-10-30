@@ -8,12 +8,12 @@ local S = default.get_translator
 -- cache method
 local sprintf = string.format
 
--- Rod checks only every interval seconds
+-- Rod checks passively every interval seconds, but detection can be forced by “using” it
 local interval = 1
 local timer = 0
 local default_range = 8
 
--- Map for player name => HUD index
+-- Map for player name => HUD index, to update sensing information and to remove the HUD when not wielding the rod
 local dowsing_hud = {}
 
 -- Constant strings
@@ -67,10 +67,11 @@ local function dowse(player, rod, rod_dowsing)
 				-- difference between the yaw of the player and that of the node_dir:
 				-- this needs to be adjustements due to periodicity
 				local hangle = player_yaw - math.atan2(-node_dir.x, node_dir.z)
-				while hangle >= angle_loop do
+				-- bring in -pi, pi range
+				while hangle >= math.pi do
 					hangle = hangle - angle_loop
 				end
-				while hangle <= -angle_loop do
+				while hangle < -math.pi do
 					hangle = hangle + angle_loop
 				end
 
@@ -84,13 +85,14 @@ local function dowse(player, rod, rod_dowsing)
 				local hpos
 				if math.abs(hangle) < angle_check or math.abs(hangle - angle_loop) < angle_check then
 					hpos = S("in front of you")
-				elseif math.abs(hangle - math.pi) < angle_check then
+				elseif math.abs(math.abs(hangle) - math.pi) < angle_check then
 					hpos = S("behind you")
-				elseif hangle - math.pi < 0 then
+				elseif hangle > 0 then
 					hpos = S("to your right")
 				else
 					hpos = S("to your left")
 				end
+				minetest.log("action", sprintf("%s hangle %g hangle - math.pi %g", hpos, hangle, hangle - math.pi))
 
 				--genloc = sprintf("%g (%g %g)",player_yaw*180/math.pi, vdir*180/math.pi, hdir*180/math.pi)
 				--genloc = sprintf("%s%s (%g | %g => %g)", vpos, hpos, vangle, player_yaw, hangle)
@@ -141,6 +143,7 @@ end)
 
 -- Rod items
 
+-- Classic dowsing rod, for water, also tells you the general direction
 minetest.register_craftitem("dowsing:rod", {
 	description = S("Dowsing rod"),
 	inventory_image = "dowsing_rod.png",
@@ -153,23 +156,33 @@ minetest.register_craftitem("dowsing:rod", {
 	on_use = function(item, user, pointed_thing) return dowse(user, item) end,
 })
 
+-- the abstract rod is a “generic” detector that informs the user about nearby blocks of interest,
+-- but has no specificity nor direction
 minetest.register_craftitem("dowsing:abstract_rod", {
 	description = S("Abstract dowsing rod"),
-	inventory_image = "abstract_dowsing_rod.png",
-	wield_image = "abstract_dowsing_rod.png^[transformFX",
+	inventory_image = "dowsing_abstract_rod.png",
+	wield_image = "dowsing_abstract_rod.png^[transformFX",
 	groups = { dowsing_rod = 1, flammable = 2},
 	stack_max = 1,
 	dowsing = {
+		-- detect water (TODO other “wet” things)
 		{ target_name = S("something wet"), target = "group:water", },
+		-- detect lava / fire etc
 		{ target_name = S("something hot"), target = "group:igniter", },
+		-- detect “interesting” but not necessairly useful things (clay, mossy cobble for dungeons, etc)
+		{ target_name = S("something interesting"), target = { "default:clay", "default:mossycobble" }, },
+		-- detect useful but common things
+		{ target_name = S("something useful"), target = { "default:stone_with_coal", "default:coalblock", "default:gravel" }, },
+		-- detect “quite useful” things (ores)
 		{
-			target_name = S("something useful"),
+			target_name = S("something quite useful"),
 			target = {
-				"default:stone_with_coal", "default:stone_with_copper", "default:stone_with_tin", "default:stone_with_iron",
-				"default:coalblock", "default:copperblock", "default:tinblock", "default:steelblock",
+				"default:stone_with_copper", "default:stone_with_tin", "default:stone_with_iron",
+				"default:copperblock", "default:tinblock", "default:steelblock",
 				"default:bronzeblock",
 			},
 		},
+		-- detect “precious” ores
 		{
 			target_name = S("something precious"),
 			target = {
@@ -181,10 +194,11 @@ minetest.register_craftitem("dowsing:abstract_rod", {
 	on_use = function(item, user, pointed_thing) return dowse(user, item) end,
 })
 
+-- element-specific dowsing rods: aside from water, they also identify specific ores
 minetest.register_craftitem("dowsing:steel_rod", {
 	description = S("Steel dowsing rod"),
-	inventory_image = "steel_dowsing_rod.png",
-	wield_image = "steel_dowsing_rod.png^[transformFX",
+	inventory_image = "dowsing_steel_rod.png",
+	wield_image = "dowsing_steel_rod.png^[transformFX",
 	groups = { dowsing_rod = 1, flammable = 2},
 	stack_max = 1,
 	dowsing = {
