@@ -1,3 +1,4 @@
+-- Dowsing mod. Code licensed under CC0, media licensed under CC BY-SA 3.0 Unported.
 
 -- Dowsing is achieved by hooking into the global time-stepping function and informing the user
 -- about nearby “interesting” nodes if they have the rod equipped
@@ -195,6 +196,34 @@ minetest.register_craftitem("dowsing:abstract_rod", {
 })
 
 -- element-specific dowsing rods: aside from water, they also identify specific ores
+minetest.register_craftitem("dowsing:copper_rod", {
+	description = S("Copper dowsing rod"),
+	inventory_image = "dowsing_copper_rod.png",
+	wield_image = "dowsing_copper_rod.png^[transformFX",
+	groups = { dowsing_rod = 1, flammable = 2},
+	stack_max = 1,
+	dowsing = {
+		{ target_name = S("water"), target = "group:water", dir = true, },
+		{ target_name = S("coal"), target = { "default:stone_with_coal", "default:coalblock", }, },
+		{ target_name = S("copper"), target = { "default:stone_with_copper", "default:copperblock", }, dir = true, },
+	},
+	on_use = function(item, user, pointed_thing) return dowse(user, item) end,
+})
+
+minetest.register_craftitem("dowsing:tin_rod", {
+	description = S("Tin dowsing rod"),
+	inventory_image = "dowsing_tin_rod.png",
+	wield_image = "dowsing_tin_rod.png^[transformFX",
+	groups = { dowsing_rod = 1, flammable = 2},
+	stack_max = 1,
+	dowsing = {
+		{ target_name = S("water"), target = "group:water", dir = true, },
+		{ target_name = S("coal"), target = { "default:stone_with_coal", "default:coalblock", }, },
+		{ target_name = S("tin"), target = { "default:stone_with_tin", "default:tinblock", }, dir = true, },
+	},
+	on_use = function(item, user, pointed_thing) return dowse(user, item) end,
+})
+
 minetest.register_craftitem("dowsing:steel_rod", {
 	description = S("Steel dowsing rod"),
 	inventory_image = "dowsing_steel_rod.png",
@@ -205,6 +234,23 @@ minetest.register_craftitem("dowsing:steel_rod", {
 		{ target_name = S("water"), target = "group:water", dir = true, },
 		{ target_name = S("coal"), target = { "default:stone_with_coal", "default:coalblock", }, },
 		{ target_name = S("iron"), target = { "default:stone_with_iron", "default:steelblock", }, dir = true, },
+	},
+	on_use = function(item, user, pointed_thing) return dowse(user, item) end,
+})
+
+minetest.register_craftitem("dowsing:mese_rod", {
+	description = S("Mese dowsing rod"),
+	inventory_image = "dowsing_mese_rod.png",
+	wield_image = "dowsing_mese_rod.png^[transformFX",
+	groups = { dowsing_rod = 1, flammable = 2},
+	stack_max = 1,
+	dowsing = {
+		{ target_name = S("water"), target = "group:water", dir = true, },
+		{ target_name = S("lava"), target = "group:lava", dir = true, },
+		{ target_name = S("coal"), target = { "default:stone_with_coal", "default:coalblock", }, dir = true, },
+		{ target_name = S("mese"), target = { "default:stone_with_mese", "default:mese", }, dir = true, },
+		{ target_name = S("gold"), target = { "default:stone_with_gold", "default:goldblock", }, dir = true, },
+		{ target_name = S("diamond"), target = { "default:stone_with_diamond", "default:diamondblock", }, dir = true, },
 	},
 	on_use = function(item, user, pointed_thing) return dowse(user, item) end,
 })
@@ -229,9 +275,34 @@ minetest.register_craft({
 })
 
 minetest.register_craft({
+	output = "dowsing:copper_rod",
+	recipe = {
+		{ "default:copper_ingot"},
+		{ "dowsing:rod"},
+	},
+})
+
+minetest.register_craft({
+	output = "dowsing:tin_rod",
+	recipe = {
+		{ "default:tin_ingot"},
+		{ "dowsing:rod"},
+	},
+})
+
+minetest.register_craft({
 	output = "dowsing:steel_rod",
 	recipe = {
 		{ "default:steel_ingot"},
+		{ "dowsing:rod"},
+	},
+})
+
+-- expensive!
+minetest.register_craft({
+	output = "dowsing:mese_rod",
+	recipe = {
+		{ "default:mese"},
 		{ "dowsing:rod"},
 	},
 })
@@ -244,5 +315,4 @@ minetest.register_craft({
 	recipe = "dowsing:rod",
 	burntime = 4, -- 4 times the burntime of group:stick
 })
-
 
