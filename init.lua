@@ -56,8 +56,6 @@ local function dowse(player, rod, rod_dowsing)
 			local node = minetest.get_node(node_pos)
 			local dist = vector.distance(player_pos, node_pos)
 
-			-- minetest.log("action", string.format("%s senses %s at distance %.1f", player_name, node.name, dist)
-
 			local genloc
 			genloc = dist < range/2 and S("nearby") or S("in the area")
 			-- assemble an approximate description of the direction in which the node can be found
@@ -93,10 +91,7 @@ local function dowse(player, rod, rod_dowsing)
 				else
 					hpos = S("to your left")
 				end
-				minetest.log("action", sprintf("%s hangle %g hangle - math.pi %g", hpos, hangle, hangle - math.pi))
 
-				--genloc = sprintf("%g (%g %g)",player_yaw*180/math.pi, vdir*180/math.pi, hdir*180/math.pi)
-				--genloc = sprintf("%s%s (%g | %g => %g)", vpos, hpos, vangle, player_yaw, hangle)
 				genloc = sprintf("%s %s%s", genloc, vpos, hpos)
 			end
 			local msg = S("You sense @1 @2", spec.target_name, genloc)
