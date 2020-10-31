@@ -279,15 +279,24 @@ minetest.register_craft({
 	},
 })
 
+-- two equivalent recipes for the abstract rod
 minetest.register_craft({
 	output = "dowsing:abstract_rod",
 	recipe = {
-		{ "default:gravel"},
-		{ "dowsing:rod"},
+		{ "default:paper", "group:sand", "default:flint" },
+		{ "default:paper", "default:gravel", "default:flint"},
+		{ "", "dowsing:rod", ""},
+	},
+})
+minetest.register_craft({
+	output = "dowsing:abstract_rod",
+	recipe = {
+		{ "default:paper", "default:gravel", "default:flint"},
+		{ "default:paper", "group:sand", "default:flint" },
+		{ "", "dowsing:rod", ""},
 	},
 })
 
--- expensive!
 minetest.register_craft({
 	output = "dowsing:mese_rod",
 	recipe = {
