@@ -152,7 +152,7 @@ function dowsing.register_rod(subname, description, image, dowsing_spec)
 	local item_name = subname and "dowsing:" .. subname .. "_rod" or "dowsing:rod"
 	minetest.register_craftitem(item_name, {
 		inventory_image = image,
-		wield_image = image .. "^[transformFX",
+		wield_image = image,
 		groups = { dowsing_rod = 1, flammable = 2},
 		stack_max = 1,
 		on_use = function(item, user, pointed_thing) return dowse(user, item) end,
