@@ -149,7 +149,7 @@ dowsing = {}
 
 -- register a new rod named dowsing:<subname>_rod, with the given description, image and dowsing spec
 function dowsing.register_rod(subname, description, image, dowsing_spec)
-	item_name = subname and "dowsing:" .. subname .. "_rod" or "dowsing:rod"
+	local item_name = subname and "dowsing:" .. subname .. "_rod" or "dowsing:rod"
 	minetest.register_craftitem(item_name, {
 		inventory_image = image,
 		wield_image = image .. "^[transformFX",
@@ -169,32 +169,56 @@ dowsing.register_rod(nil, S("Dowsing rod"), "dowsing_rod.png", {
 
 -- The Abstract rod is a “generic” detector that informs the user about nearby blocks of interest,
 -- but has no specificity nor direction
-dowsing.register_rod("abstract", S("Abstract dowsing rod"),  "dowsing_abstract_rod.png", {
-	-- detect water (TODO other “wet” things)
-	{ target_name = S("something wet"), target = "group:water", },
-	-- detect lava / fire etc
-	{ target_name = S("something hot"), target = "group:igniter", },
-	-- detect “interesting” but not necessairly useful things (clay, mossy cobble for dungeons, etc)
-	{ target_name = S("something interesting"), target = { "default:clay", "default:mossycobble" }, },
-	-- detect useful but common things
-	{ target_name = S("something useful"), target = { "default:stone_with_coal", "default:coalblock", "default:gravel" }, },
-	-- detect “quite useful” things (ores)
-	{
-		target_name = S("something quite useful"),
-		target = {
-			"default:stone_with_copper", "default:stone_with_tin", "default:stone_with_iron",
-			"default:copperblock", "default:tinblock", "default:steelblock",
-			"default:bronzeblock",
-		},
-	},
-	-- detect “precious” ores
-	{
-		target_name = S("something precious"),
-		target = {
-			"default:stone_with_mese", "default:stone_with_gold", "default:stone_with_diamond",
-			"default:mese", "default:goldblock", "default:diamondblock",
-		},
-	},
+
+local abstract_dowsing_spec = {}
+
+dowsing.register_rod("abstract", S("Abstract dowsing rod"),  "dowsing_abstract_rod.png", abstract_dowsing_spec)
+
+-- Allow others to extend the abstract rod by creating new specs and/or adding targets
+function dowsing.new_abstract_target(name, description, warn_if_exists)
+	if abstract_dowsing_spec[name] then
+		if warn_if_exists then
+			minetest.log("warning", "abstract dowsing spec " .. name .. " exists already")
+		end
+	else
+		abstract_dowsing_spec[name] = { target_name = description, target = {} }
+	end
+end
+
+function dowsing.add_abstract_target(name, target_spec)
+	if type(target_spec) == "table" then
+		for _, v in pairs(target_spec) do
+			table.insert(abstract_dowsing_spec[name].target, v)
+		end
+	else
+		table.insert(abstract_dowsing_spec[name], target_spec)
+	end
+end
+
+dowsing.new_abstract_target("wet", S("something wet"))
+dowsing.new_abstract_target("hot", S("something hot"))
+dowsing.new_abstract_target("interesting", S("something interesting"))
+dowsing.new_abstract_target("useful", S("something useful"))
+dowsing.new_abstract_target("quite_useful", S("something quite useful"))
+dowsing.new_abstract_target("precious", S("something precious"))
+
+-- detect water (TODO other “wet” things)
+dowsing.add_abstract_target("wet",  "group:water")
+-- detect lava / fire etc
+dowsing.add_abstract_target("hot",  "group:igniter")
+-- detect “interesting” but not necessairly useful things (clay, mossy cobble for dungeons, etc)
+dowsing.add_abstract_target("interesting", { "default:clay", "default:mossycobble" })
+-- detect useful but common things
+dowsing.add_abstract_target("useful", { "default:stone_with_coal", "default:coalblock", "default:gravel" })
+-- detect “quite useful” things (ores)
+dowsing.add_abstract_target("quite_useful", {
+	"default:stone_with_copper", "default:stone_with_tin", "default:stone_with_iron",
+	"default:copperblock", "default:tinblock", "default:steelblock",
+	"default:bronzeblock",
+})
+dowsing.add_abstract_target("precious", {
+	"default:stone_with_mese", "default:stone_with_gold", "default:stone_with_diamond",
+	"default:mese", "default:goldblock", "default:diamondblock",
 })
 
 -- The Mese rod is essentially an ore detector with high specificity
