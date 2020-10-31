@@ -5,3 +5,6 @@ interval (Dowsing interval) float 1
 
 # Detection range for dowsing rods that do not specify one
 default_range (Default dowsing range) int 8 3 32768
+
+# Multiplier for the detection range when using the rod
+use_range_multiplier (Range multiplier on use) int 2 1 8
