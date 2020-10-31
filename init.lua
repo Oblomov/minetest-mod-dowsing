@@ -43,6 +43,7 @@ local function dowse(player, rod, rod_dowsing)
 		number = 0xffffff,
 	})
 
+	-- adjust player position to eye level, roundeded to integer
 	player_pos.y = player_pos.y + 1
 	player_pos = vector.round(player_pos)
 
@@ -50,14 +51,16 @@ local function dowse(player, rod, rod_dowsing)
 	local found = false
 	for _, spec in pairs(dowsing) do
 		local range = spec.range or default_range
+		local nearby_range = spec.nearby_range or math.max(math.ceil(range/2), 3)
 		local nodenames = spec.target
+
 		local node_pos = minetest.find_node_near(player_pos, range, nodenames)
 		if node_pos then
 			local node = minetest.get_node(node_pos)
 			local dist = vector.distance(player_pos, node_pos)
 
 			local genloc
-			genloc = dist < range/2 and S("nearby") or S("in the area")
+			genloc = dist < nearby_range and S("nearby") or S("in the area")
 			-- assemble an approximate description of the direction in which the node can be found
 			if spec.dir then
 				local node_dir = vector.direction(player_pos, node_pos)
@@ -99,9 +102,10 @@ local function dowse(player, rod, rod_dowsing)
 			found = true
 		end
 	end
-	-- if the action was requested and nothing was found, let the user known
+
+	-- update the HUD even if nothing was found, with a specific text
 	if not found then
-		-- log only if the action was requested
+		-- log to server if nothing was found and the action was requested
 		if not rod_dowsing then
 			minetest.log("action", player_name .. " senses nothing")
 		end
@@ -126,7 +130,7 @@ minetest.register_globalstep(function(dtime)
 		if rod_dowsing ~= nil then
 			dowse(player, rod, rod_dowsing)
 		else
-			-- remove the dowsing hud
+			-- remove the dowsing HUD is the player is not wielding a rod anymore
 			local player_name = player:get_player_name()
 			local hud = dowsing_hud[player_name]
 			if hud then
