@@ -10,9 +10,9 @@ local S = default.get_translator
 local sprintf = string.format
 
 -- Rod checks passively every interval seconds, but detection can be forced by “using” it
-local interval = 1
 local timer = 0
-local default_range = 8
+local interval = minetest.setting_get("dowsing.interval") or 1
+local default_range = minetest.setting_get("dowsing.default_range") or 8
 
 -- Map for player name => HUD index, to update sensing information and to remove the HUD when not wielding the rod
 local dowsing_hud = {}
@@ -117,11 +117,13 @@ local function dowse(player, rod, rod_dowsing)
 end
 
 minetest.register_globalstep(function(dtime)
+	if interval <= 0 then return end
+
 	-- increment timer, return if interval hasn't elapsed
 	timer = timer + dtime
-	if timer < interval then
-		return
-	end
+	if timer < interval then return end
+
+	-- OK, the interval is passed
 	timer = timer - interval
 
 	for _, player in pairs(minetest.get_connected_players()) do

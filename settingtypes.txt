@@ -1,0 +1,7 @@
+# Period (in seconds) after which the dowsing information gets updated passively
+# (i.e. without the user taking action).
+# Set to a negative value or 0 to disable passive updates.
+interval (Dowsing interval) float 1
+
+# Detection range for dowsing rods that do not specify one
+default_range (Default dowsing range) int 8 3 32768
