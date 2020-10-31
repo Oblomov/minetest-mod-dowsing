@@ -18,6 +18,10 @@ local use_range_multiplier = minetest.setting_get("dowsing.use_range_multiplier"
 -- Map for player name => HUD index, to update sensing information and to remove the HUD when not wielding the rod
 local dowsing_hud = {}
 
+-- Map for player name => last pos and item used. The use_range_multiplier is preserved until
+-- one of these things change
+local last_use = {}
+
 -- Constant strings
 local dowsing_nothing = S("You sense nothing in the area")
 
@@ -29,7 +33,7 @@ local angle_loop = math.pi*2
 local function dowse(player, rod, rod_dowsing)
 	-- passive is true if the dowsing comes from the timer interval, it's false on use
 	-- on_use rod_dowsing is not passed, so we can just check for that being not nil
-	local passive = rod_dowsing ~= nil 
+	local passive = rod_dowsing ~= nil
 	local dowsing = rod_dowsing or rod:get_definition().dowsing
 	local player_pos = player:get_pos()
 	local player_name = player:get_player_name()
@@ -51,14 +55,29 @@ local function dowse(player, rod, rod_dowsing)
 	player_pos.y = player_pos.y + 1
 	player_pos = vector.round(player_pos)
 
+	local detection_range_multiplier = 1
+	if not passive then
+		detection_range_multiplier = use_range_multiplier
+		last_use[player_name] = { pos = player_pos, tool = rod:get_name() }
+	else
+		local last = last_use[player_name]
+		-- keep the range multiplier if we didn't move and the tool didn't change
+		-- FIXME we only check for the tool NAME, since I can't find a way to check if the
+		-- item is the same, but this is good enough (it just means that if you switch to a different
+		-- rod of the same time it'll keep the multiplier, which is acceptable)
+		if last and vector.equals(last.pos, player_pos) and last.tool == rod:get_name() then
+			detection_range_multiplier = use_range_multiplier
+		end
+	end
 
 	local found = false
 	for _, spec in pairs(dowsing) do
 		local range = spec.range or default_range
 		local nearby_range = spec.nearby_range or math.max(math.ceil(range/2), 3)
-		-- on use, the detection range gets multiplied
-		local detection_range = passive and range or range*use_range_multiplier
 		local nodenames = spec.target
+
+		-- on use, the detection range gets multiplied by a constant
+		local detection_range = range*detection_range_multiplier
 
 		local node_pos = minetest.find_node_near(player_pos, detection_range, nodenames)
 		if node_pos then
@@ -138,8 +157,12 @@ minetest.register_globalstep(function(dtime)
 		if rod_dowsing ~= nil then
 			dowse(player, rod, rod_dowsing)
 		else
-			-- remove the dowsing HUD is the player is not wielding a rod anymore
 			local player_name = player:get_player_name()
+
+			-- reset last use
+			last_use[player_name] = nil
+
+			-- remove the dowsing HUD is the player is not wielding a rod anymore
 			local hud = dowsing_hud[player_name]
 			if hud then
 				player:hud_remove(hud)
