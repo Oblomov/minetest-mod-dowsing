@@ -143,102 +143,61 @@ minetest.register_globalstep(function(dtime)
 	end
 end)
 
--- Rod items
+-- Public API to allow registration of other rods
+
+dowsing = {}
+
+-- register a new rod named dowsing:<subname>_rod, with the given description, image and dowsing spec
+function dowsing.register_rod(subname, description, image, dowsing_spec)
+	item_name = subname and "dowsing:" .. subname .. "_rod" or "dowsing:rod"
+	minetest.register_craftitem(item_name, {
+		inventory_image = image,
+		wield_image = image .. "^[transformFX",
+		groups = { dowsing_rod = 1, flammable = 2},
+		stack_max = 1,
+		on_use = function(item, user, pointed_thing) return dowse(user, item) end,
+		dowsing = dowsing_spec
+	})
+end
+
+-- Register the main rods
 
 -- Classic dowsing rod, for water, also tells you the general direction
-minetest.register_craftitem("dowsing:rod", {
-	description = S("Dowsing rod"),
-	inventory_image = "dowsing_rod.png",
-	wield_image = "dowsing_rod.png^[transformFX",
-	groups = { dowsing_rod = 1, flammable = 2},
-	stack_max = 1,
-	dowsing = {
-		{ target_name = S("water"), target = "group:water", dir = true, },
-	},
-	on_use = function(item, user, pointed_thing) return dowse(user, item) end,
+dowsing.register_rod(nil, S("Dowsing rod"), "dowsing_rod.png", {
+	{ target_name = S("water"), target = "group:water", dir = true, },
 })
 
--- the abstract rod is a “generic” detector that informs the user about nearby blocks of interest,
+-- The Abstract rod is a “generic” detector that informs the user about nearby blocks of interest,
 -- but has no specificity nor direction
-minetest.register_craftitem("dowsing:abstract_rod", {
-	description = S("Abstract dowsing rod"),
-	inventory_image = "dowsing_abstract_rod.png",
-	wield_image = "dowsing_abstract_rod.png^[transformFX",
-	groups = { dowsing_rod = 1, flammable = 2},
-	stack_max = 1,
-	dowsing = {
-		-- detect water (TODO other “wet” things)
-		{ target_name = S("something wet"), target = "group:water", },
-		-- detect lava / fire etc
-		{ target_name = S("something hot"), target = "group:igniter", },
-		-- detect “interesting” but not necessairly useful things (clay, mossy cobble for dungeons, etc)
-		{ target_name = S("something interesting"), target = { "default:clay", "default:mossycobble" }, },
-		-- detect useful but common things
-		{ target_name = S("something useful"), target = { "default:stone_with_coal", "default:coalblock", "default:gravel" }, },
-		-- detect “quite useful” things (ores)
-		{
-			target_name = S("something quite useful"),
-			target = {
-				"default:stone_with_copper", "default:stone_with_tin", "default:stone_with_iron",
-				"default:copperblock", "default:tinblock", "default:steelblock",
-				"default:bronzeblock",
-			},
-		},
-		-- detect “precious” ores
-		{
-			target_name = S("something precious"),
-			target = {
-				"default:stone_with_mese", "default:stone_with_gold", "default:stone_with_diamond",
-				"default:mese", "default:goldblock", "default:diamondblock",
-			},
+dowsing.register_rod("abstract", S("Abstract dowsing rod"),  "dowsing_abstract_rod.png", {
+	-- detect water (TODO other “wet” things)
+	{ target_name = S("something wet"), target = "group:water", },
+	-- detect lava / fire etc
+	{ target_name = S("something hot"), target = "group:igniter", },
+	-- detect “interesting” but not necessairly useful things (clay, mossy cobble for dungeons, etc)
+	{ target_name = S("something interesting"), target = { "default:clay", "default:mossycobble" }, },
+	-- detect useful but common things
+	{ target_name = S("something useful"), target = { "default:stone_with_coal", "default:coalblock", "default:gravel" }, },
+	-- detect “quite useful” things (ores)
+	{
+		target_name = S("something quite useful"),
+		target = {
+			"default:stone_with_copper", "default:stone_with_tin", "default:stone_with_iron",
+			"default:copperblock", "default:tinblock", "default:steelblock",
+			"default:bronzeblock",
 		},
 	},
-	on_use = function(item, user, pointed_thing) return dowse(user, item) end,
-})
-
--- element-specific dowsing rods: aside from water, they also identify specific ores
-minetest.register_craftitem("dowsing:copper_rod", {
-	description = S("Copper dowsing rod"),
-	inventory_image = "dowsing_copper_rod.png",
-	wield_image = "dowsing_copper_rod.png^[transformFX",
-	groups = { dowsing_rod = 1, flammable = 2},
-	stack_max = 1,
-	dowsing = {
-		{ target_name = S("water"), target = "group:water", dir = true, },
-		{ target_name = S("coal"), target = { "default:stone_with_coal", "default:coalblock", }, },
-		{ target_name = S("copper"), target = { "default:stone_with_copper", "default:copperblock", }, dir = true, },
+	-- detect “precious” ores
+	{
+		target_name = S("something precious"),
+		target = {
+			"default:stone_with_mese", "default:stone_with_gold", "default:stone_with_diamond",
+			"default:mese", "default:goldblock", "default:diamondblock",
+		},
 	},
-	on_use = function(item, user, pointed_thing) return dowse(user, item) end,
 })
 
-minetest.register_craftitem("dowsing:tin_rod", {
-	description = S("Tin dowsing rod"),
-	inventory_image = "dowsing_tin_rod.png",
-	wield_image = "dowsing_tin_rod.png^[transformFX",
-	groups = { dowsing_rod = 1, flammable = 2},
-	stack_max = 1,
-	dowsing = {
-		{ target_name = S("water"), target = "group:water", dir = true, },
-		{ target_name = S("coal"), target = { "default:stone_with_coal", "default:coalblock", }, },
-		{ target_name = S("tin"), target = { "default:stone_with_tin", "default:tinblock", }, dir = true, },
-	},
-	on_use = function(item, user, pointed_thing) return dowse(user, item) end,
-})
-
-minetest.register_craftitem("dowsing:steel_rod", {
-	description = S("Steel dowsing rod"),
-	inventory_image = "dowsing_steel_rod.png",
-	wield_image = "dowsing_steel_rod.png^[transformFX",
-	groups = { dowsing_rod = 1, flammable = 2},
-	stack_max = 1,
-	dowsing = {
-		{ target_name = S("water"), target = "group:water", dir = true, },
-		{ target_name = S("coal"), target = { "default:stone_with_coal", "default:coalblock", }, },
-		{ target_name = S("iron"), target = { "default:stone_with_iron", "default:steelblock", }, dir = true, },
-	},
-	on_use = function(item, user, pointed_thing) return dowse(user, item) end,
-})
-
+-- The Mese rod is essentially an ore detector with high specificity
 minetest.register_craftitem("dowsing:mese_rod", {
 	description = S("Mese dowsing rod"),
 	inventory_image = "dowsing_mese_rod.png",
@@ -275,30 +234,6 @@ minetest.register_craft({
 	},
 })
 
-minetest.register_craft({
-	output = "dowsing:copper_rod",
-	recipe = {
-		{ "default:copper_ingot"},
-		{ "dowsing:rod"},
-	},
-})
-
-minetest.register_craft({
-	output = "dowsing:tin_rod",
-	recipe = {
-		{ "default:tin_ingot"},
-		{ "dowsing:rod"},
-	},
-})
-
-minetest.register_craft({
-	output = "dowsing:steel_rod",
-	recipe = {
-		{ "default:steel_ingot"},
-		{ "dowsing:rod"},
-	},
-})
-
 -- expensive!
 minetest.register_craft({
 	output = "dowsing:mese_rod",
@@ -309,11 +244,36 @@ minetest.register_craft({
 })
 
 
+-- element-specific dowsing rods: aside from water, they also identify specific ores
+
+local function register_ore_rod(ingot, desc,  target, ore)
+	local ore = ore or ingot
+	local target = target or S(ore)
+	dowsing.register_rod(ingot, desc, "dowsing_" .. ingot .. "_rod.png", {
+		{ target_name = S("water"), target = "group:water", dir = true, },
+		{ target_name = S("coal"), target = { "default:stone_with_coal", "default:coalblock", }, },
+		{ target_name = S("copper"), target = { "default:stone_with_" ..ore, "default:" .. ingot .. "block", }, dir = true, },
+	})
+	minetest.register_craft({
+		output = "dowsing:" .. ingot .. "_rod",
+		recipe = {
+			{ "default:" .. ingot .. "_ingot"},
+			{ "dowsing:rod"},
+		},
+})
+
+end
+
+register_ore_rod("copper", S("Copper dowsing rod"))
+register_ore_rod("tin", S("Tin dowsing rod"))
+register_ore_rod("steel", S("Steel dowsing rod"), "iron")
+register_ore_rod("gold", S("Gold dowsing rod"))
+
+
 -- Fuel recipes
 
 minetest.register_craft({
 	type = "fuel",
-	recipe = "dowsing:rod",
+	recipe = "group:dowsing_rod",
 	burntime = 4, -- 4 times the burntime of group:stick
 })
-
