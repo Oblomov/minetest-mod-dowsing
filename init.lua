@@ -191,7 +191,7 @@ function dowsing.add_abstract_target(name, target_spec)
 			table.insert(abstract_dowsing_spec[name].target, v)
 		end
 	else
-		table.insert(abstract_dowsing_spec[name], target_spec)
+		table.insert(abstract_dowsing_spec[name].target, target_spec)
 	end
 end
 
@@ -203,9 +203,9 @@ dowsing.new_abstract_target("quite_useful", S("something quite useful"))
 dowsing.new_abstract_target("precious", S("something precious"))
 
 -- detect water (TODO other “wet” things)
-dowsing.add_abstract_target("wet",  "group:water")
+dowsing.add_abstract_target("wet", "group:water")
 -- detect lava / fire etc
-dowsing.add_abstract_target("hot",  "group:igniter")
+dowsing.add_abstract_target("hot", "group:igniter")
 -- detect “interesting” but not necessairly useful things (clay, mossy cobble for dungeons, etc)
 dowsing.add_abstract_target("interesting", { "default:clay", "default:mossycobble" })
 -- detect useful but common things
