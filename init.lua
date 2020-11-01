@@ -22,6 +22,23 @@ local dowsing_hud = {}
 -- one of these things change
 local last_use = {}
 
+local function set_last_use(name, pos, tool)
+	last_use[name] = { pos = pos, tool = tool:get_name() }
+end
+
+-- returns true if the player name has the same pos and tool as last use
+-- FIXME we only check for the tool NAME, since I can't find a way to check if the
+-- item is the same, but this is good enough (it just means that if you switch to a different
+-- rod of the same time it'll keep the multiplier, which is acceptable)
+local function match_last_use(name, pos, tool)
+	local last = last_use[name]
+	if not last then return false end
+	local unchanged = vector.equals(last.pos, pos) and last.tool == tool:get_name()
+	-- if something changed, remove the last use before returning false
+	if not unchanged then last_use[name] = nil end
+	return unchanged
+end
+
 -- Constant strings
 local dowsing_nothing = S("You sense nothing in the area")
 
@@ -58,14 +75,11 @@ local function dowse(player, rod, rod_dowsing)
 	local detection_range_multiplier = 1
 	if not passive then
 		detection_range_multiplier = use_range_multiplier
-		last_use[player_name] = { pos = player_pos, tool = rod:get_name() }
+		set_last_use(player_name, player_pos, rod)
 	else
 		local last = last_use[player_name]
 		-- keep the range multiplier if we didn't move and the tool didn't change
-		-- FIXME we only check for the tool NAME, since I can't find a way to check if the
-		-- item is the same, but this is good enough (it just means that if you switch to a different
-		-- rod of the same time it'll keep the multiplier, which is acceptable)
-		if last and vector.equals(last.pos, player_pos) and last.tool == rod:get_name() then
+		if match_last_use(player_name, player_pos, rod) then
 			detection_range_multiplier = use_range_multiplier
 		end
 	end
